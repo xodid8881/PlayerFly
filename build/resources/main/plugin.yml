@@ -1,0 +1,16 @@
+name: PlayerFly
+version: '1.1-SNAPSHOT'
+main: org.hwabeag.playerfly.PlayerFly
+api-version: '1.20'
+
+commands:
+  플라이관리:
+    description: 플라이를 관리합니다
+    usage: /플라이관리
+    aliases: [플라이,ㅍㄹㅇ]
+  플라이권:
+    description: 플라이권을 관리합니다
+    usage: /플라이권
+    aliases: [ㅍㄹㅇㄱ]
+
+depend: [PlaceholderAPI]
