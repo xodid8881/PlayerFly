@@ -1,0 +1,18 @@
+playerfly:
+  prefix: "&a&l[플라이]&7"
+  noworld:
+    test: true
+  fly-infinity: false
+
+database:
+  type: "sqlite" # sqlite 또는 mysql
+  sqlite:
+    file: "playerfly.db"
+  mysql:
+    host: "127.0.0.1"
+    port: 3306
+    database: "playerfly"
+    username: "root"
+    password: "password"
+    useSSL: false
+    serverTimezone: "Asia/Seoul"
