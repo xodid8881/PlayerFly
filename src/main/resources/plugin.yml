@@ -1,16 +1,16 @@
-name: PlayerFly
-version: '${version}'
+﻿name: PlayerFly
+version: "${version}"
 main: org.hwabeag.playerfly.PlayerFlyPlugin
-api-version: '1.21'
+api-version: "1.21"
 authors: [hwabeag]
 softdepend: [PlaceholderAPI]
 
 commands:
-  플라이관리:
-    description: 플라이 시간과 상태를 관리합니다.
-    usage: /플라이관리
-    aliases: [플관리]
-  플라이아이템:
-    description: 플라이 지급 아이템을 관리합니다.
-    usage: /플라이아이템
-    aliases: [플아]
+  playerfly:
+    description: 플라이 시간을 관리합니다.
+    usage: /playerfly
+    aliases: [플라이관리, fly]
+  flyticket:
+    description: 플라이권 아이템을 지급합니다.
+    usage: /flyticket 지급 <닉네임> [분]
+    aliases: [플라이권, fly권]

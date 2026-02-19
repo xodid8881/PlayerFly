@@ -1,8 +1,16 @@
-playerfly:
+﻿playerfly:
   prefix: "&a&l[플라이]&7"
   noworld:
     test: true
   fly-infinity: false
+
+fly-ticket:
+  default-minutes: 30
+  material: "BOOK"
+  display-name: "&a&l[플라이권]"
+  lore:
+    - "&f&l- 사용하면 %minutes%분 추가"
+    - "&f&l- 우클릭으로 사용"
 
 database:
   type: "sqlite" # sqlite 또는 mysql

@@ -1,4 +1,4 @@
-package org.hwabeag.playerfly.schedules
+﻿package org.hwabeag.playerfly.schedules
 
 import org.bukkit.Bukkit
 import org.bukkit.scheduler.BukkitRunnable
@@ -10,6 +10,10 @@ class PlayerFlyTask(private val plugin: PlayerFlyPlugin) : BukkitRunnable() {
             val data = plugin.databaseManager.getData(player.uniqueId, player.name)
             if (!data.enabled) {
                 continue
+            }
+
+            if (!plugin.isManagedFlight(player.uniqueId)) {
+                plugin.markManagedFlight(player.uniqueId)
             }
 
             if (plugin.config.getBoolean("playerfly.fly-infinity")) {
@@ -26,8 +30,11 @@ class PlayerFlyTask(private val plugin: PlayerFlyPlugin) : BukkitRunnable() {
 
             plugin.databaseManager.setMinutes(player.uniqueId, player.name, 0)
             plugin.databaseManager.setEnabled(player.uniqueId, player.name, false)
-            player.isFlying = false
-            player.allowFlight = false
+            if (plugin.isManagedFlight(player.uniqueId)) {
+                player.isFlying = false
+                player.allowFlight = false
+            }
+            plugin.unmarkManagedFlight(player.uniqueId)
             player.sendTitle(plugin.color("&a&l[플라이]"), plugin.color("&a&l- 플라이 시간이 모두 소진되었습니다."))
         }
     }

@@ -1,4 +1,4 @@
-package org.hwabeag.playerfly
+﻿package org.hwabeag.playerfly
 
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
@@ -12,10 +12,13 @@ import org.hwabeag.playerfly.events.JoinEvent
 import org.hwabeag.playerfly.expansions.PlayerFlyExpansion
 import org.hwabeag.playerfly.schedules.FlyCheckTask
 import org.hwabeag.playerfly.schedules.PlayerFlyTask
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class PlayerFlyPlugin : JavaPlugin() {
     lateinit var databaseManager: DatabaseManager
         private set
+    private val managedFlightPlayers: MutableSet<UUID> = ConcurrentHashMap.newKeySet()
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -29,8 +32,8 @@ class PlayerFlyPlugin : JavaPlugin() {
         server.pluginManager.registerEvents(JoinEvent(this), this)
         server.pluginManager.registerEvents(InvClickEvent(this), this)
 
-        getCommand("플라이관리")?.setExecutor(MainCommand(this))
-        getCommand("플라이아이템")?.setExecutor(ItemCommand(this))
+        getCommand("playerfly")?.setExecutor(MainCommand(this))
+        getCommand("flyticket")?.setExecutor(ItemCommand(this))
 
         PlayerFlyTask(this).runTaskTimer(this, 1200L, 1200L)
         FlyCheckTask(this).runTaskTimer(this, 100L, 100L)
@@ -59,5 +62,17 @@ class PlayerFlyPlugin : JavaPlugin() {
         return config.getConfigurationSection("playerfly.noworld")
             ?.getKeys(false)
             ?.contains(worldName) == true
+    }
+
+    fun markManagedFlight(uuid: UUID) {
+        managedFlightPlayers.add(uuid)
+    }
+
+    fun unmarkManagedFlight(uuid: UUID) {
+        managedFlightPlayers.remove(uuid)
+    }
+
+    fun isManagedFlight(uuid: UUID): Boolean {
+        return managedFlightPlayers.contains(uuid)
     }
 }

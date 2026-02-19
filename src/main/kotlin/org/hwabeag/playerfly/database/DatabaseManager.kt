@@ -1,10 +1,11 @@
-package org.hwabeag.playerfly.database
+﻿package org.hwabeag.playerfly.database
 
 import org.bukkit.configuration.file.FileConfiguration
 import org.hwabeag.playerfly.PlayerFlyPlugin
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 data class FlyData(
     val minutes: Int,
@@ -17,38 +18,36 @@ class DatabaseManager(private val plugin: PlayerFlyPlugin) {
     private var username: String = ""
     private var password: String = ""
 
+    private val dataCache: MutableMap<UUID, FlyData> = ConcurrentHashMap()
+    private val ensuredPlayers: MutableSet<UUID> = ConcurrentHashMap.newKeySet()
+
     fun initialize() {
         loadFromConfig(plugin.config)
         createTableIfNeeded()
+        dataCache.clear()
+        ensuredPlayers.clear()
     }
 
     fun reload() {
         loadFromConfig(plugin.config)
         createTableIfNeeded()
+        dataCache.clear()
+        ensuredPlayers.clear()
     }
 
     fun close() {
+        dataCache.clear()
+        ensuredPlayers.clear()
     }
 
     @Synchronized
     fun getData(uuid: UUID, name: String): FlyData {
+        dataCache[uuid]?.let { return it }
+
         ensurePlayer(uuid, name)
-        getConnection().use { conn ->
-            conn.prepareStatement(
-                "SELECT fly_minutes, fly_enabled FROM player_fly WHERE uuid = ?"
-            ).use { ps ->
-                ps.setString(1, uuid.toString())
-                ps.executeQuery().use { rs ->
-                    if (rs.next()) {
-                        return FlyData(
-                            minutes = rs.getInt("fly_minutes"),
-                            enabled = rs.getBoolean("fly_enabled")
-                        )
-                    }
-                }
-            }
-        }
-        return FlyData(0, false)
+        val loaded = queryData(uuid) ?: FlyData(0, false)
+        dataCache[uuid] = loaded
+        return loaded
     }
 
     @Synchronized
@@ -62,21 +61,28 @@ class DatabaseManager(private val plugin: PlayerFlyPlugin) {
     @Synchronized
     fun setMinutes(uuid: UUID, name: String, minutes: Int) {
         ensurePlayer(uuid, name)
+        val currentEnabled = dataCache[uuid]?.enabled ?: queryData(uuid)?.enabled ?: false
+        val nextMinutes = minutes.coerceAtLeast(0)
+
         getConnection().use { conn ->
             conn.prepareStatement(
                 "UPDATE player_fly SET name = ?, fly_minutes = ? WHERE uuid = ?"
             ).use { ps ->
                 ps.setString(1, name)
-                ps.setInt(2, minutes.coerceAtLeast(0))
+                ps.setInt(2, nextMinutes)
                 ps.setString(3, uuid.toString())
                 ps.executeUpdate()
             }
         }
+
+        dataCache[uuid] = FlyData(nextMinutes, currentEnabled)
     }
 
     @Synchronized
     fun setEnabled(uuid: UUID, name: String, enabled: Boolean) {
         ensurePlayer(uuid, name)
+        val currentMinutes = dataCache[uuid]?.minutes ?: queryData(uuid)?.minutes ?: 0
+
         getConnection().use { conn ->
             conn.prepareStatement(
                 "UPDATE player_fly SET name = ?, fly_enabled = ? WHERE uuid = ?"
@@ -87,10 +93,16 @@ class DatabaseManager(private val plugin: PlayerFlyPlugin) {
                 ps.executeUpdate()
             }
         }
+
+        dataCache[uuid] = FlyData(currentMinutes, enabled)
     }
 
     @Synchronized
     private fun ensurePlayer(uuid: UUID, name: String) {
+        if (ensuredPlayers.contains(uuid)) {
+            return
+        }
+
         getConnection().use { conn ->
             if (isMysql()) {
                 conn.prepareStatement(
@@ -118,6 +130,27 @@ class DatabaseManager(private val plugin: PlayerFlyPlugin) {
                 }
             }
         }
+
+        ensuredPlayers.add(uuid)
+    }
+
+    private fun queryData(uuid: UUID): FlyData? {
+        getConnection().use { conn ->
+            conn.prepareStatement(
+                "SELECT fly_minutes, fly_enabled FROM player_fly WHERE uuid = ?"
+            ).use { ps ->
+                ps.setString(1, uuid.toString())
+                ps.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        return FlyData(
+                            minutes = rs.getInt("fly_minutes"),
+                            enabled = rs.getBoolean("fly_enabled")
+                        )
+                    }
+                }
+            }
+        }
+        return null
     }
 
     private fun createTableIfNeeded() {

@@ -1,4 +1,4 @@
-package org.hwabeag.playerfly.inventory
+﻿package org.hwabeag.playerfly.inventory
 
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -9,8 +9,12 @@ import org.bukkit.inventory.meta.SkullMeta
 import org.hwabeag.playerfly.PlayerFlyPlugin
 
 class FlySettingGUI(private val plugin: PlayerFlyPlugin) {
+    companion object {
+        const val TITLE = "플라이 설정"
+    }
+
     fun open(player: Player) {
-        val inv: Inventory = Bukkit.createInventory(null, 9, "플라이")
+        val inv: Inventory = Bukkit.createInventory(null, 9, TITLE)
         inv.setItem(4, createHead(player))
         player.openInventory(inv)
     }
